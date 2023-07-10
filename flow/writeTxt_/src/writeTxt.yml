@@ -13,7 +13,7 @@ pipeline:
 
   - name: gcv_recognizer2
     config:
-      bucket: orgpediafoundationindia
+      bucket: opfindia
       compress_output: True
 
   - name: orient_pages
