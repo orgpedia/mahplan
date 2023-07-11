@@ -88,10 +88,9 @@ format:
 	poetry run black -q .
 	poetry run ruff --fix .
 
-export: 
-	$(info "Nothing for now")
-	# git add .
-	# git commit
+export: readme
+	poetry run op export-mah
+
 
 # Use pre-commit if there are lots of edits,
 # https://pre-commit.com/ for instructions
