@@ -15341,5 +15341,70 @@
     "name": "mahplan-1266.pdf",
     "num_pages": 2,
     "large_image_idxs": []
+  },
+  "/import/websites/gr.maharashtra.gov.in/Planning/15-Jul-2023/202307101207546416.pdf": {
+    "code": "202307101207546416",
+    "crawl_dir": "15-Jul-2023",
+    "date": "10-07-2023",
+    "dept": "Planning Department",
+    "download_time": "2023-07-15T14:52:45.193667",
+    "size_kb": "177",
+    "text": "Appointment of Nominated Members and Special Invitee Members On District Planning Committee, Bhandara.",
+    "url": "https://gr.maharashtra.gov.in/Site/Upload/Government%20Resolutions/English/202307101207546416.pdf",
+    "name": "mahplan-1267.pdf",
+    "num_pages": 3,
+    "large_image_idxs": []
+  },
+  "/import/websites/gr.maharashtra.gov.in/Planning/15-Jul-2023/202307101217107016.pdf": {
+    "code": "202307101217107016",
+    "crawl_dir": "15-Jul-2023",
+    "date": "10-07-2023",
+    "dept": "Planning Department",
+    "download_time": "2023-07-15T14:52:51.337472",
+    "size_kb": "961",
+    "text": "Regarding Formation of Executive Committee For District Planning Committee, Bhandara.",
+    "url": "https://gr.maharashtra.gov.in/Site/Upload/Government%20Resolutions/English/202307101217107016.pdf",
+    "name": "mahplan-1268.pdf",
+    "num_pages": 2,
+    "large_image_idxs": []
+  },
+  "/import/websites/gr.maharashtra.gov.in/Planning/15-Jul-2023/202307101627058316.pdf": {
+    "code": "202307101627058316",
+    "crawl_dir": "15-Jul-2023",
+    "date": "10-07-2023",
+    "dept": "Planning Department",
+    "download_time": "2023-07-15T14:52:55.861288",
+    "size_kb": "133",
+    "text": "Regarding issuing approval to Rennovation of Training Hall at Regional Office Konkan Bhavan, Directorate of Economics Statistics",
+    "url": "https://gr.maharashtra.gov.in/Site/Upload/Government%20Resolutions/English/202307101627058316.pdf",
+    "name": "mahplan-1269.pdf",
+    "num_pages": 1,
+    "large_image_idxs": []
+  },
+  "/import/websites/gr.maharashtra.gov.in/Planning/15-Jul-2023/202307121257139416.pdf": {
+    "code": "202307121257139416",
+    "crawl_dir": "15-Jul-2023",
+    "date": "12-07-2023",
+    "dept": "Planning Department",
+    "download_time": "2023-07-15T14:52:40.892387",
+    "size_kb": "664",
+    "text": "Updated subject list of Planning Department.",
+    "url": "https://gr.maharashtra.gov.in/Site/Upload/Government%20Resolutions/English/202307121257139416.pdf",
+    "name": "mahplan-1270.pdf",
+    "num_pages": 2,
+    "large_image_idxs": []
+  },
+  "/import/websites/gr.maharashtra.gov.in/Planning/15-Jul-2023/202307141613290816.pdf": {
+    "code": "202307141613290816",
+    "crawl_dir": "15-Jul-2023",
+    "date": "14-07-2023",
+    "dept": "Planning Department",
+    "download_time": "2023-07-15T14:52:35.740754",
+    "size_kb": "162",
+    "text": "Regarding regularization of promotion granted on temporary basis to the post of Joint Director, Group-A.",
+    "url": "https://gr.maharashtra.gov.in/Site/Upload/Government%20Resolutions/English/202307141613290816.pdf",
+    "name": "mahplan-1271.pdf",
+    "num_pages": 2,
+    "large_image_idxs": []
   }
 }
