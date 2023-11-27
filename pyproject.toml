@@ -12,7 +12,6 @@ classifiers=[
     'License :: OSI Approved :: MIT License',
     'Natural Language :: English',
     'Programming Language :: Python :: 3',
-    'Programming Language :: Python :: 3.7',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
     'Programming Language :: Python :: 3.10',
@@ -33,7 +32,7 @@ include = [ "export/orgpedia_mahplan/*" ]
 "data issues" = "https://github.com/orgpedia/mahplan/discussions"
 
 [tool.poetry.dependencies]
-python = "!=3.7.6,!=3.8.1,>3.7.1"
+python = ">3.8.1"
 
 # this is a datapackage should not have any dependency as we are publishing data
 # dependencies for running the flow are in group.dev.dependencies
@@ -47,13 +46,12 @@ orgpedia = { git = "https://github.com/orgpedia/orgpedia.git" }
 
 google-cloud-storage = "^2.9.0"
 google-cloud-vision = "^3.4.2"
-google-cloud-translate = "^2.0.1"
 pdfplumber = "^0.9.0"
 
 
 black = "^22.6.0"
 ruff = "^0.0.243"
-#pre-commit = "^2.21.0" # version compatible with 3.7
+pre-commit = "^2.21.0" # version compatible with 3.7
 
 
 [tool.poetry.group.translate]
@@ -63,7 +61,7 @@ optional = true
 docint = { git = "https://github.com/mukundesh/docint.git" }
 
 indic-nlp-library = {git = "https://github.com/orgpedia/indic_nlp_library-deva.git"}
-ctranslate2 = "3.9.0"
+ctranslate2 = "^3.22.0"
 sentencepiece = "^0.1.99"
 
 [build-system]
