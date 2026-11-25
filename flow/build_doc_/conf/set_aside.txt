@@ -1,0 +1,2 @@
+# GRs set aside by a person: <name>\t<reason>, one a line, each with a reason of its own. build_doc_'s make writes
+# them, with the GRs the rules in department.yml find, into output/set_aside.txt (the template's §G4a).

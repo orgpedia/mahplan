@@ -1,0 +1,301 @@
+# A Maharashtra department's GRs on GovDoc: the flow of the build_doc_ task (orgpedia/template.mahdept; its spec,
+# ../spec.md). The same file in every department: what is the department's own comes from
+# ../conf/values.yml
+# (below). Paths are relative to this file: the PDFs are ../input/pdfs/<YYYY-MM>/, links by name to the department's
+# PDFs in the repo's import/pdfs/ (make input); the portal's records ../input/sources.json, a link to import/src/.
+# The task keeps its own files, with no working store (orgpedia/doc docflow.md §N9): the storage setting below.
+# Settings here are collection-wide: nothing is set for one document. Mistakes are found by
+# checkers and fixed by a person in the reviewer (recorded as edits in ../conf/), not by
+# per-document settings. Difficult documents go in `exclude`, with a reason.
+# Outside data, pinned: the document profiles (src/data/profiles/<version>.json); the registry and the memory
+# are translate_'s to read (../../translate_/, the task after this one: the names found and the English).
+#
+# The department's own values (orgpedia/doc specs/docflow.md §P4a), put in for ${name} when the flow loads:
+# ../conf/values.yml is written from ../../../department.yml by mahdept values (make does it before every docflow
+# command), never by hand. A value department.yml has not decided yet (null) stops the flow.
+#   profiles         the document profiles' version pinned below (department.yml data.profiles)
+#   masthead_names   the masthead's department line as a pattern (every name it has had); (?!) for none
+#   masthead_words   each name's first word, joined by |; (?!) for none
+#   max_pages        the import step skips a longer PDF (its status record says why)
+#   ocr              the pages read whole: indic (IndicOCR, Cloud Vision on a budget) or gcv (Cloud Vision)
+storage: {layout: task}  # GovDoc files in ../output/, moved to the repo's export/build_doc_/ by make export (docflow.md §N9)
+values: ../conf/values.yml
+data: {profiles: "${profiles}"}  # src/data/profiles/<version>.json; the registry and the memory are translate_'s
+
+# The flow reads the PDFs of at most max_pages pages (department.yml): the import step skips the others, each GR's
+# status record (../output/<name>.status.json) saying why. Difficult documents among them go here, by file id (the
+# portal's URLs do not end in the file's name): file id -> reason.
+exclude: {}
+
+flow:
+  - name: import
+    task: import_manifest
+    config: {paths: ["../input/pdfs/*/*.pdf"], portal: mh_gr, publisher: Government of Maharashtra,
+             sources: ../input/sources.json, max_pages: "${max_pages}"}
+
+  # The text layer through unipdf: Unicode for Devanagari fonts, styles, what the PDF said as
+  # original_text. Scanned pages, and text in legacy fonts or invisible (a scanner's OCR layer), read
+  # by OCR: a page that is nearly all such text whole, by IndicOCR (Bodhan AI, on our gateway:
+  # OCR_API_KEY), its words on Tesseract's boxes; else the boxes alone, by Tesseract; only those words
+  # replace the text layer's. The pages IndicOCR is doubtful on are read by Google Cloud Vision instead,
+  # within the department's cloud_vision_budget, the newest GRs first: mahdept ocr pick names them in
+  # conf/overrides/text/ (make flow runs it; orgpedia/doc specs/docflow.md §T5, mahgrs.md §W16).
+  # Answers are kept in responses/, so a page is paid for once.
+  - name: text
+    task: pdf_text
+    # reph: a page that lost its reph (core:text_broken_reph) read by OCR; covered: a scan drawn over the scanner's
+    # own OCR layer (PWD's GRs of 2001-2013) read by OCR, the text under it left (docflow.md Part T)
+    # ocr: indic, or gcv for the departments already read by Cloud Vision (Finance, Public Works, Parliamentary
+    # Affairs: department.yml's ocr; mahgrs.md §W16)
+    config: {ocr: "${ocr}", languages: [mar, eng], reph: ocr, covered: ocr}
+    # retries: Cloud Vision or IndicOCR unavailable for a moment (a 503) is tried again, the pages read kept. later:
+    # the GRs whose pages need Cloud Vision (not yet in the call cache) are put back and read after every other GR is
+    # done (orgpedia/doc specs/docflow.md §P11a); IndicOCR's pages come by batch (make flow, DOCFLOW_DEFER)
+    context: {retries: 3, later: [gcv]}
+
+  # Devanagari words the text layer gave wrongly, page by page.
+  - name: text_check
+    task: deva_check
+
+  # Lines that stop at a table's rules, then the tables (pdfplumber's finder, ported: ruling.py)
+  # with paragraphs, headings and the pages' furniture around them, then each table's cells.
+  # The three steps find the same tables: they share the table settings (a YAML anchor).
+  - name: lines
+    task: ruled_lines
+    config: {settings: &rules {vertical_strategy: lines, horizontal_strategy: lines, scans: true}}
+  - name: layout
+    task: pdftable_finder
+    # the digital-signature stamp is set in Myriad Pro. A line starting with a list marker, or with
+    # one of the headings that start a GR's sections, starts a paragraph: a scan's OCR and some text
+    # layers run a heading into the paragraph before it ("दिनांक … / वाचा शासन निर्णय…"), and a
+    # section can only start at a block. Pages set with wide line spacing, mostly scans, are otherwise
+    # cut into paragraphs every few lines: a gap up to 1.45 x the run's usual gap does not start one
+    # when the line before runs the page's full width without ending a sentence (join_cut; checked
+    # on 270 joins, review/layout/).
+    config:
+      settings: *rules
+      join_cut: 1.45
+      furniture_fonts: [MyriadPro-Regular]
+      # out of the flow anywhere on the page: "please turn over" ((कृ.मा.प.), (P.T.O.); 523 lines in 501 GRs) and
+      # the Government Central Press's form codes (एच-797 (13000+40-8-94) अ., ROTA/H-2062 (4950+50-01-2008)-1;
+      # 819 lines in 510 GRs), nearly all at the page's foot (review/furniture/). The press's name alone
+      # ("शासकीय मध्यवर्ती मुद्रणालय, मुंबई") is left in: a copy list addresses the press so too.
+      furniture_patterns:
+        - '^\W*(?:कृ\s*\.?\s*मा\s*\.?\s*प|(?i:p\s*\.?\s*t\s*\.?\s*o))\W*$'
+        - '^[^\n]{0,30}?(?:एच|H)\s*[-−–]?\s*[\d०-९]{2,5}\s*\(\s*[\d०-९][\d०-९,+\s\-]{4,30}\)[^\n]{0,6}$'
+      markers:
+        - '^[(\[]?([\d०-९]{1,3}|[a-zA-Z]|[ivxIVX]{1,4}|[अ-ह])[.)\]]'
+        - '^\W*विषय\s*[:ःः\-–]'
+        - '^\W*महाराष्ट्र\s*शासन(?![ऀ-ॿ])(?!\s*पुरस्कृत)'
+        - '^\W*(?:संदर्भ|संदभव|संदभभ|वाचा|पहा|READ|Read)(?![ऀ-ॿ])\s*(?:[:ःः\-–—.]|$)'
+        - '^\W*(?:वाचा|पहा)(?![ऀ-ॿ])'
+        - '^\W*प्रस्तावना(?![ऀ-ॿ])'
+        - '^\W*(?:(?:शासन|कार्यालयीन)\s*)?(?:निर्णय|निणणय|निणमय|निणवय|निणगय|निणय|आदेश|परिपत्रक|अधिसूचना|अधिसुचना|शु(?:द्ध|ध्द)[िी]पत्रक?|ज्ञापन|पूरकपत्र|पुरकपत्र)(?![ऀ-ॿ])\s*(?:[:ःः\-–—.]+(?!\s*(?:क्र|सं\.|सांकेत))|$)'
+        - '^\W*(?:\S+\s+){0,2}राज्यपाल\s*(?:यांच्या|यांचे)\s*(?:आदेशानुसार|नावाने|नांवाने)'
+        - '^\W*(?:प्रत|प्रती|प्रति|प्रतिलिपी|प्रतिलीपी)(?![ऀ-ॿ])\s*(?:[,:ःः\-–—]|$|माहिती|रवाना|अग्रेषित|\.\s*$|[ऀ-ॿ\-]*सह(?![ऀ-ॿ])\s*(?:[,:ःः\-–—.]|$))'
+        - '^\W*(?:परिशिष्ट|परीशिष्ट)(?![ऀ-ॿ])'
+  - name: tables
+    task: pdftable_cells
+    config: {settings: *rules, header_rows: auto}
+  - name: table_check
+    task: ruled_table_check
+    config: {settings: *rules}
+
+  # The GR as one document (annexures stay in it, as core:annexure), its id from the GR code it
+  # prints ("सांकेतांक २०२४०३०७१८३९२९०३०१"), or else the one in its URL.
+  - name: split
+    task: section_splitter
+    config:
+      doc_type: mh_gr
+      ids: ["MH_GR_{code}", "MH_GR_{url_code}"]
+      captures:
+        code: {pattern: '(?:सांकेत|संकेत)ा?ं?क\s*(?:क्रमांक)?\s*[:ः]?\s*(?P<value>[\d०-९]{14,20})'}
+        url_code: {pattern: '(\d{14,20})', source: url}
+
+  # The GR's parts. Every block is in exactly one section, in the order a GR prints them: the
+  # subject, the masthead, the references, the preamble, the decision, the signature, the copy
+  # list, the annexures. A section starts at its heading and ends where a later one starts; the walk
+  # never goes back (a "शासन निर्णय" in the copy list starts nothing). Where a heading is missing:
+  # the masthead ends at its date line and the references at their last entry, and what follows is
+  # the decision; the signature is at most five blocks, and what follows is the copy list (each
+  # marked as found without its heading). Headings misspelt by the text layer ("निणणय", "संदभव")
+  # are accepted until unipdf reads them right.
+  - name: roles
+    task: pattern_tagger
+    config:
+      rules:
+        - kind: sections
+          doc_type: mh_gr
+          sections:
+            # the title above the masthead, or a "विषय :" paragraph wherever it is
+            - label: "gr:subject"
+              lead: true
+              max_blocks: 3
+              inline: true
+              start: ['^\W*विषय\s*[:ःः\-–]', '(?i)^\W*sub(?:ject)?\s*[:\-–]']
+            - label: "core:masthead"
+              pages: [1, 2]
+              start:
+                - '^\W*महाराष्ट्र\s*शासन(?![ऀ-ॿ])(?!\s*पुरस्कृत)'
+                - '(?:^|\s)महाराष्ट्र\s*शासन\W*${masthead_names}'
+                - '(?i)^\W*government\s+of\s+maharashtra'
+                - '^\W*(?:महाराष्ट्र\s*\S{1,8}\s*,?\s*)?${masthead_names}\W*$'
+                - '^\W*(?:(?:महाराष्ट्र\s*शासन\W*)?${masthead_names}\W*)?(?:(?:शासन|कार्यालयीन)\s*)?(?:निर्णय|निणणय|निणमय|निणवय|निणगय|निणय|आदेश|परिपत्रक|अधिसूचना|अधिसुचना|शु(?:द्ध|ध्द)[िी]पत्रक?|ज्ञापन|पूरकपत्र|पुरकपत्र)(?![ऀ-ॿ])\s*[,.]?\s*(?<![ऀ-ॿ.])(?:क्रमांक|क्रमाांक|क्रममांक|क्रमाक|कुमांक|क्र\s*\.|कु\s*\.|क्र(?=\s))'
+                - '(?i)^\W*(?:government\s+)?(?:resolution|circular|notification|corrigendum|memorandum|order)\s*No\b'
+                - '^\W*क्रमांक\s*[:ःः\-–]'
+              end_after: '(?:दिनांक|तारीख|दि\.|[Dd]ated)\s*[:ःः\-–]*\s*[^\n]{0,30}?[\d०-९]{4}'
+              then: "gr:decision"
+              # the GR again in English after the Marathi one's signature, copy list or annexures: the sections
+              # start afresh (one document in two languages, GovDoc §5)
+              again_after: ["core:signature_block", "core:cc_list", "core:annexure"]
+              again_start: ['(?i)^\W*government\s+of\s+maharashtra']
+            - label: "gr:references"
+              after: ["core:masthead"]
+              # "वाचा", "पहा", and PWD's "पहावे :-" (474 GRs from 2020)
+              start: ['^\W*(?:संदर्भ|संदभव|संदभभ|संदभण|वाचा|पहा|पहावे|वाचावे|पडा)(?![ऀ-ॿ])\s*(?:[:ःः\-–—.]|$|[\d०-९(])',
+                      '^\W*(?:वाचा|पहा|पहावे|वाचावे)(?![ऀ-ॿ])',
+                      '^\W*(?:READ|Read|Ref(?:erence)?s?)\s*(?:[:\-–—.]|[\d(])']
+              # an entry: numbered, or citing an order or a letter, and not a long paragraph
+              continues: '(?s)^(?=.{0,400}$)(?:\W*[(\[]?(?:[\d०-९]{1,2}|[a-zA-Zअ-ह]|[ivxIVX]{1,4})\s*[.)\]]|.*(?<![ऀ-ॿ])(?:क्र|क्रमांक|दि|दिनांक|पत्र|अधिसूचना|निर्णय|परिपत्रक)(?![ऀ-ॿ])|.*(?:No\.|[Dd]ated))'
+              then: "gr:decision"
+            - label: "gr:preamble"
+              after: ["core:masthead", "gr:references"]
+              start: ['^\W*(?:प्रस्तावना|प्रस्तावणा)(?![ऀ-ॿ])', '(?i)^\W*preamble']
+            # "शासन निर्णय :", "शासन निर्णय :- राज्य शासनाने…", "शासन निर्णय शासन असे…"; not the masthead's
+            # "शासन निर्णय क्रमांक", "शासन निर्णय :- क्र. …" or "शासन निर्णय - बीडीजी-२०१०/…" (its number after a dash,
+            # PWD's 2010-2025; not a date, "शुद्धीपत्रक - दिनांक ०१/०९/२०१४"), nor a reference's "शासन निर्णय, वित्त विभाग"
+            - label: "gr:decision"
+              after: ["core:masthead", "gr:references", "gr:preamble"]
+              start:
+                - '^\W*(?:(?:शासन|कार्यालयीन)\s*)?(?:निर्णय|निणणय|निणमय|निणवय|निणगय|निणय|आदेश|परिपत्रक|अधिसूचना|अधिसुचना|शु(?:द्ध|ध्द)[िी]पत्रक?|ज्ञापन|पूरकपत्र|पुरकपत्र)(?![ऀ-ॿ])(?:\s*[:ःः\-–—.]++(?!\s*(?:क्र|सं\.|सांकेत)|\s*(?:${masthead_names}\W*(?:क्रमांक|क्र\s*\.)?\W*)?(?!दिनांक|दि\s*\.)[ऀ-ॿA-Za-z]{1,12}[\s\-–.]*[\d०-९][\d०-९.,]*\s?(?:प्र\s*\.?\s*क्र\s*\.?\s*[\d०-९]+\s?)?/)|\s*$|\s+(?![^\n]{0,30}?(?:क्रमांक|क्र\s*[.:ः]))(?![:ःः\-–—.]|क|सं|सां|सम|दि|,|वि\.|${masthead_words}|No))'
+                - '(?i)^\W*(?:government\s+)?(?:resolution|order|circular|memorandum|notification|corrigendum)\s*(?:[:\-–—.]|$)'
+            - label: "core:signature_block"
+              after: ["core:masthead", "gr:references", "gr:preamble", "gr:decision"]
+              start:
+                - '^\W*(?:\S+\s+){0,2}राज्यपाल\s*(?:यांच्या|यांचे)\s*(?:आदेशानुसार|नावाने|नांवाने)'
+                - '^\W*(?:\S+\s+){0,5}आदेशानुसार\s*व\s*ना[ंँ]?वाने'
+                - '^\W*(?:\S+\s+){0,5}ना[ंँ]?वाने\s*व\s*आदेशानुसार'
+                - '(?i)^\W*by\s+order\s+and\s+in\s+the\s+name'
+                - '(?i)\bby\s+order\s+and\s+in\s+the\s+name\s+of\s+the\s+governor'  # glued to the paragraph before
+                # a signatory's name alone in brackets, with initials ("( सु. भा. बलमे )"): a circular signed
+                # by an office, without the Governor's order
+                - '(?s)^\W*[(\[]\s*(?:श्रीम(?:ती)?\.?\s*|श्री\.?\s*|डॉ\.?\s*)?(?:[ऀ-ॿ]{1,3}\s*\.\s*){1,3}[ऀ-ॿ]{2,15}\s*[)\]](?=.{0,120}$)'
+              # the name and post: short blocks, not the copy list's "प्रति महालेखापाल, …"
+              continues: '(?s)^(?=.{0,150}$)(?!\W*(?:प्रत|प्रती|प्रति)(?![ऀ-ॿ]))'
+              max_blocks: 5
+              then: "core:cc_list"
+            - label: "core:cc_list"
+              after: ["gr:references", "gr:preamble", "gr:decision", "core:signature_block"]
+              start:
+                # "प्रत सहपत्रासह," (with the enclosures), "प्रत गोषवा-यासह,", "प्रत.": PWD, 49 GRs of 2007-2010 whose copy
+                # list was read as the decision's
+                - '^\W*(?:प्रत|प्रती|प्रति|प्रतिलिपी|प्रतिलीपी|प्रतिलिपि)(?![ऀ-ॿ])\s*(?:[,:ःः\-–—]|$|माहिती|रवाना|अग्रेषित|पुढील|सर्व|आवश्यक|योग्य|\.\s*$|[ऀ-ॿ\-]*सह(?![ऀ-ॿ])\s*(?:[,:ःः\-–—.]|$))'
+                - '(?i)^\W*cop(?:y|ies)\s+(?:to|forwarded|submitted)'
+                - '^\W*To\s*,?\s*$'
+              # it ends at its footnote ("* पत्राद्वारे", by letter), at a table, or at a long block of prose (a sentence
+              # ending "… आहे." or "… यावी.", or in English); what follows is an annexure without its heading. A numbered
+              # entry goes on in it however long ("२) मुख्य अभियंता, … (यांनी … कार्यवाही करावी.)": PWD, 490 GRs)
+              end_after: '\*\s*पत्रा(?:द्व|व्द)ार'
+              continues: '(?s)^(?:\W*[(]?[\d०-९]{1,2}\s*[).]\s*[ऀ-ॿ]|(?!(?=.{250}).*(?:(?:आहे|आहेत|येईल|यावे|यावी|यावा|करावी|करावे|करावा|आले|आली|आलेली|आलेले)\s*[.।]|\b(?:is|are|shall|will|has\s+been|have\s+been)\b)))'
+              ends_at_table: true
+              then: "core:annexure"
+            - label: "core:annexure"
+              after: ["core:signature_block", "core:cc_list"]
+              many: true
+              tables: true  # a table can start one: its heading is often its first row (PWD: 138 GRs)
+              start:
+                # the GR it goes with, its order number and date, as its title ("सार्वजनिक बांधकाम विभाग, शासन परिपत्रक
+                # क्र.ज्येष्ठता-२०२३/…, दि. १० जुलै, २०२४ संवर्गाचे नाव …", a seniority list; "… दि.०७/१०/२०२१ सोबतचे"), with
+                # more after its date; not a running header, which ends at the date or prints none
+                - '(?s)^\W*(?:${masthead_names}\W*)?(?:शासन\s*)?(?:निर्णय|परिपत्रक|आदेश|अधिसूचना|शु(?:द्ध|ध्द)[िी]पत्रक)\W*(?:${masthead_names}\W*)?(?:क्रमांक|क्र\s*\.)(?=.{0,120}?(?:दिनांक|दि\s*\.)\s*[^\n]{0,20}?[\d०-९]{4}\W*?\s+\S)'
+                - '^\W*(?:परिशिष्ट्?ट?|परीशिष्ट|परिशिष्ठ|प्रपत्र|नमुना)(?![ऀ-ॿ])'
+                # "सहपत्र", "सहपत्र - अ", "जोडपत्र-१", "सहपत्र क्र. १"; not a signature's note of what it encloses, the word,
+                # a separator and a word ("सहपत्र - विवरणपत्र", "सहपत्र :- वेळापत्रक", "सहपत्र- वरीलप्रमाणे एकूण ४ पृष्ठे")
+                - '^\W*(?:सहपत्र|जोडपत्र)(?![ऀ-ॿ])(?!\s*[:ःः\-–—]+\s*(?!(?:एक|दोन|तीन|चार|पाच|सहा|सात|आठ)(?![ऀ-ॿ]))[ऀ-ॿ]{2})'
+                - '(?i)^\W*(?:annexure|appendix|schedule|accompaniment|form)\b'
+                # the same headings spaced out by the text layer, alone in a short block ("प्र पत्र", "जो ड प त्र")
+                - '(?s)^(?=.{0,40}$)(?!\W*(?:परिशिष्ट|सहपत्र|प्रपत्र|जोडपत्र))\W*(?:प\s*रि\s*शि\s*ष्ट|स\s*ह\s*प\s*त्र|प्र\s*प\s*त्र|जो\s*ड\s*प\s*त्र)(?![ऀ-ॿ])'
+                # "शासन निर्णय … दि. … सोबतचे विवरणपत्र", "सोबतचा तक्ता", "सोबत जोडलेले विवरणपत्र"; a short heading ending
+                # "… दर्शविणारा तक्ता". Not a signature's "सोबत : जोडपत्र" or "Enclosure - Annexure 'A'" (what it encloses)
+                - 'सोबत(?:चे|चा|ची|च्या|\s*जोडलेले)\W*(?:सहपत्र|परिशिष्ट|विवरणपत्र|तक्ता|प्रपत्र|नमुना|जोडपत्र|यादी)'
+                - '(?s)^(?!\W*(?:सोबत|सहपत्र)\s*[:ःः\-–])(?=.{0,200}$).*(?:विवरणपत्र|तक्ता)\W*$'
+        # the order's kind and number, in the masthead ("शासन निर्णय क्रमांक : ...", "शासन निर्णय. वित्त विभाग क्रमांक - …", or
+        # "क्रमांक : ..." alone, OCR's "कुमांक", "क्रामांक",
+        # "क्रममांक", "क्रमीक", "क्रं.", "क्रः", glued to the kind; not the "प्र.क्र." inside a number); the number may start with five words ("अग्रिम ( व्याजदर ) - १०.०४/"), space its slashes ("सीपीजे १४८० / सीआर ६८०")
+        # and end "- १०"; else the kind and the number with no क्रमांक between; else a number alone under "महाराष्ट्र शासन"; else in the blocks before any heading (a masthead its start patterns missed); else at the start of a
+        # paragraph of the body (the Gazette's "अधिसूचना" then "क्रमांक ...--"); else in English
+        - {pattern: &order_no '(?:(?P<kind>(?:शासन\s*)?(?:निर्णय|आदेश|आदेशा|परिपत्रक|अधिसूचना|शु(?:द्ध|ध्द)[िी]पत्रक?|ज्ञापन|(?:पूरकपत्र|पुरकपत्र|पुरक\s*पत्र)))\s*[,.–-]?\s*(?:${masthead_names}\s*,?\s*)?)?(?:(?<![ऀ-ॿ])|(?<=र्णय)|(?<=त्रक)|(?<=चना))(?<!प्र\.)(?<!प्र\.\s)(?<!प्र\s)(?:क्रमांक|क्रमाांक|क्रामांक|क्रममांक|क्रमाक|क्रमीक|क्रमाद|कुमांक|कृपाक|क्रं\s*\.?|क्र(?:\s*\.|(?=[\s:ःः\-–]))|कु\s*\.)[\s:ःः\-–]*(?P<number>(?!\S*\s*रजिस्टर्ड)(?:(?!(?:शासन\s*)?(?:निर्णय|आदेश|आदेशा|परिपत्रक|अधिसूचना|शु(?:द्ध|ध्द)[िी]पत्रक?|ज्ञापन|(?:पूरकपत्र|पुरकपत्र|पुरक\s*पत्र))|क्रमांक|क्र\.)\S+\s){0,5}?\S*\s?/(?:\s?(?:प्र\s*\.?\s*क्र\s*\.?\s*[\d०-९]+|(?:[ऀ-ॿ]{1,3}\s){1,3}[ऀ-ॿ]{1,3}|\S*\s?\S*)\s?/)*\s?\S*(?:\s?[-–]\s?[\d०-९]{1,3}(?![\d०-९])|\s[ऀ-ॿ]{1,3}(?![ऀ-ॿ]))?)', within: "core:masthead",
+           groups: {kind: {label: "gr:order_kind", type: text}, number: {label: "gr:order_number", type: identifier}}}
+        - {pattern: '(?P<kind>(?:शासन\s*)?(?:निर्णय|आदेश|आदेशा|परिपत्रक|अधिसूचना|शु(?:द्ध|ध्द)[िी]पत्रक?|ज्ञापन|(?:पूरकपत्र|पुरकपत्र|पुरक\s*पत्र)))[\s,:ःः\-–—]*(?P<number>(?:[ऀ-ॿ]+\s?[-–]?\s?)?[\d०-९.]+\s?/(?:\s?(?:प्र\s*\.?\s*क्र\s*\.?\s*[\d०-९]+|(?:[ऀ-ॿ]{1,3}\s){1,3}[ऀ-ॿ]{1,3}|\S*\s?\S*)\s?/)*\s?\S*(?:\s?[-–]\s?[\d०-९]{1,3}(?![\d०-९])|\s[ऀ-ॿ]{1,3}(?![ऀ-ॿ]))?)', within: "core:masthead", unless: "gr:order_number",
+           groups: {kind: {label: "gr:order_kind", type: text}, number: {label: "gr:order_number", type: identifier}}}
+        - {pattern: '(?:^\W*|महाराष्ट्र\s*शासन\W*)(?P<number>[ऀ-ॿ]+\s?[-–]?\s?[\d०-९.]+\s?/\s?प्र\s*\.?\s*क्र(?:\s?(?:प्र\s*\.?\s*क्र\s*\.?\s*[\d०-९]+|(?:[ऀ-ॿ]{1,3}\s){1,3}[ऀ-ॿ]{1,3}|\S*\s?\S*)\s?/)*\s?\S*(?:\s?[-–]\s?[\d०-९]{1,3}(?![\d०-९])|\s[ऀ-ॿ]{1,3}(?![ऀ-ॿ]))?)', within: "core:masthead", unless: "gr:order_number",
+           groups: {number: {label: "gr:order_number", type: identifier}}}
+        - {pattern: *order_no, within: "gr:subject", unless: "gr:order_number",
+           groups: {kind: {label: "gr:order_kind", type: text}, number: {label: "gr:order_number", type: identifier}}}
+        - {pattern: '^\W*(?:(?<![ऀ-ॿ])|(?<=र्णय)|(?<=त्रक)|(?<=चना))(?<!प्र\.)(?<!प्र\.\s)(?<!प्र\s)(?:क्रमांक|क्रमाांक|क्रममांक|क्रमाक|क्रमीक|क्रमाद|कुमांक|कृपाक|क्रं\s*\.?|क्र(?:\s*\.|(?=[\s:ःः\-–]))|कु\s*\.)[\s:ःः\-–]*(?P<number>(?!\S*\s*रजिस्टर्ड)(?:(?!(?:शासन\s*)?(?:निर्णय|आदेश|आदेशा|परिपत्रक|अधिसूचना|शु(?:द्ध|ध्द)[िी]पत्रक?|ज्ञापन|(?:पूरकपत्र|पुरकपत्र|पुरक\s*पत्र))|क्रमांक|क्र\.)\S+\s){0,5}?\S*\s?/(?:\s?(?:प्र\s*\.?\s*क्र\s*\.?\s*[\d०-९]+|(?:[ऀ-ॿ]{1,3}\s){1,3}[ऀ-ॿ]{1,3}|\S*\s?\S*)\s?/)*\s?\S*(?:\s?[-–]\s?[\d०-९]{1,3}(?![\d०-९])|\s[ऀ-ॿ]{1,3}(?![ऀ-ॿ]))?)', within: "gr:decision", unless: "gr:order_number",
+           groups: {number: {label: "gr:order_number", type: identifier}}}
+        - {pattern: &order_no_en '(?i)(?P<kind>(?:government\s+)?(?:resolution|circular|notification|corrigendum|memorandum|order))\s*No\s*[.:]*\s*(?P<number>(?:[a-z][a-z.\-]*\s?[-.]?\s?[\d.]+|[\d.]+(?=\s?/))(?:\s?/\s?[\w.()\-]+(?:\s(?!mantralaya|sachivalaya|dated|bombay|mumbai)[\w.()\-]+)?)*)', within: "core:masthead", unless: "gr:order_number",
+           groups: {kind: {label: "gr:order_kind", type: text}, number: {label: "gr:order_number", type: identifier}}}
+        - {pattern: *order_no_en, within: "gr:subject", unless: "gr:order_number",
+           groups: {kind: {label: "gr:order_kind", type: text}, number: {label: "gr:order_number", type: identifier}}}
+        # else its kind from the heading of the decision ("ज्ञापन :")
+        - {pattern: '^\W*(?P<kind>(?:(?:शासन|कार्यालयीन)\s*)?(?:निर्णय|निणणय|निणमय|निणवय|निणगय|निणय|आदेश|परिपत्रक|अधिसूचना|अधिसुचना|शु(?:द्ध|ध्द)[िी]पत्रक?|ज्ञापन|पूरकपत्र|पुरकपत्र))(?![ऀ-ॿ])\s*(?:[:ःः\-–—.]|$)', within: "gr:decision",
+           unless: "gr:order_kind", groups: {kind: {label: "gr:order_kind", type: text}}}
+        - {pattern: '(?:सांकेत|संकेत)ा?ं?क\s*(?:क्रमांक|क्र\s*\.?)?\s*[:ः]?\s*(?P<code>[\d०-९]{14,20})',
+           groups: {code: {label: "gr:gr_code", type: identifier}}}
+        - {pattern: '(?:दिनांक|तारीख)\s*[:ःः-]?\s*(?P<date>[^\n]{0,30}?[\d०-९]{4})', within: "core:masthead",
+           groups: {date: {label: "core:issue_date", type: date}}}
+
+  # Checks on the roles: every block in exactly one section (and the sections found without their
+  # heading, as information), present, with values, the running header carrying the order number,
+  # the issue date not after the date the GR code encodes, the decision's paragraphs numbered
+  # in order, and the page numbers ("पृष्ठ ७ पैकी २") in order.
+  # Lists (orgpedia/doc: specs/mahfin.md §F12, GovDoc 3.6 §6.1): numbered, lettered and bulleted lists with their
+  # levels, the decision's paragraphs among them (its first often unnumbered), a run of (१) (२) inside a sentence,
+  # and the copy list's lines where it prints no numbers; the blocks in no section too (null: an old scan whose
+  # sections were not found, its "क) … ख)" a list all the same)
+  - name: lists
+    task: list_finder
+    config:
+      sections: ["gr:references", "gr:preamble", "gr:decision", "core:cc_list", "core:annexure", null]
+      by_line: ["core:cc_list"]
+      first_unnumbered: ["gr:decision"]
+      bullets: "#"
+
+  - name: role_check
+    task: pattern_check
+    config:
+      rules:
+        - {kind: sections, doc_type: mh_gr, labels: ["gr:subject", "core:masthead", "gr:references", "gr:preamble",
+           "gr:decision", "core:signature_block", "core:cc_list", "core:annexure"]}
+        - {kind: required, doc_type: mh_gr,
+           labels: ["gr:subject", "gr:order_kind", "gr:order_number", "core:issue_date", "gr:gr_code", "core:signature_block"]}
+        - {kind: value, labels: ["core:issue_date", "gr:order_number", "gr:gr_code"]}
+        - {kind: header_carries, label: "gr:order_number", pattern: 'क्रमांक'}
+        - {kind: date_not_after, label: "core:issue_date", other: "gr:gr_code"}
+        - {kind: sequence, label: "core:list_marker", within: "gr:decision", starts: [1, 2]}
+        - {kind: page_numbers, pattern: 'पैकी\s*(?P<n>[\d०-९]+)'}
+
+  # Blocks to look at before their text is trusted, flagged and never changed (orgpedia/doc specs/docflow.md, block
+  # checks): running text cut in two by the layout (one sentence ending a block, going on in the next of the same
+  # section), a block of lines ending in commas read as one paragraph outside the copy list, and a table whose grid is
+  # hard to be sure of (merged cells under a header of several rows, many empty cells, read by OCR) or text that looks
+  # like a table not found. Measured on 600 GRs of each department (review/blocks/, not kept): cut blocks in a third of
+  # the GRs since 2015, tables to check in a seventh.
+  - name: block_check
+    task: block_check
+    config:
+      prose: ["gr:subject", "gr:references", "gr:preamble", "gr:decision", "core:annexure", null]
+      by_line: ["core:cc_list"]
+
+  # The values in every block and table cell (orgpedia/doc: specs/translation.md, the values tagger): dates and
+  # when a thing takes effect, amounts, percentages, financial years, identifiers, pay scales, budget heads,
+  # parts of a document, contact details; for translation to keep and search to use
+  - name: values
+    task: value_tagger
+    needs: [split]
+
+  # No export step (November 19, orgpedia/doc docflow.md §N16 item 7): each GR's export (its fields, parts, text and
+  # tables, every value pointing at its words) is made from its GovDoc file when a report asks (mahdept.exports, with
+  # the portal's record from ../input/sources.json for what the text does not give); nothing is kept in ../output/
+  # but the GovDoc files and the status records.

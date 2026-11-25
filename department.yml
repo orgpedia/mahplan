@@ -1,0 +1,61 @@
+# The department's settings (orgpedia/template.mahdept: spec.md §G2), rendered by copier from the department's entry
+# in the template's depts.yml (decision 36). Do not edit them here: change depts.yml, commit the template, and run
+# `make update_from_copier`.
+#
+#   null  not decided yet. `make flow` refuses to start while any setting is null.
+#   []    decided: none.
+#
+# The commands read this file (mahdept); the flow reads the values mahdept writes from it into each task's
+# conf/values.yml, before every docflow command. flow.yml is the same in every department. `make check` says whether
+# everything is decided and agrees.
+
+# the crawler's code (mahgetNewGRs/depts.txt): its folders on HuggingFace and in LFS/; its records (urlinfos/,
+# uploadinfos/) are copied by make import out of LFS/mahGRs/infos/mahplan/ into import/infos/
+code: mahplan
+
+# department, or trial: a pseudo department for a new task (the template's spec §G10); a trial's import/pdfs.txt is
+# written by hand, and it never pushes
+kind: department
+
+names:
+  en: "Planning Department"  # in English, as the department calls itself
+
+# The masthead's department line, as GRs print it: every name it has had, in Marathi, newest first (the portal lists
+# departments under new names from June 24, 2026, mahgrs.md §W1). Plain words; mahdept makes the patterns. [] lets
+# the flow run before the names are known: the patterns that need a name then match nothing, and setting the names
+# later re-runs only the steps that use them.
+masthead:
+  names: ["नियोजन विभाग"]
+
+# the flow reads the PDFs of at most this many pages (make import; mahgrs.md §W12 item 5: 20 for every department
+# until decided otherwise)
+max_pages: 20
+
+# dollars Cloud Vision may cost the department, in all (not a month): the pages read whole that IndicOCR is doubtful
+# on (its words agree with Tesseract's under 0.6, or a block cut off), the newest GRs first, chosen by mahdept ocr
+# pick into flow/build_doc_/conf/overrides/; a page chosen is never taken back. 0: none (orgpedia/doc specs/mahgrs.md
+# §W16)
+cloud_vision_budget: 0.75
+
+# the pages read whole by OCR: indic (IndicOCR, its words on Tesseract's boxes; Cloud Vision on the budget above) or
+# gcv (Cloud Vision, every page: the departments read by it before IndicOCR, Finance, Public Works and Parliamentary
+# Affairs, so their pages paid for are not read again; orgpedia/doc specs/mahgrs.md §W16); none: no OCR, for a run on
+# the text PDFs alone (make list_text_all; §W17)
+ocr: none  # the text PDFs alone, no OCR (run_dept_fetch.sh; mahgrs.md §W17)
+
+# GRs set aside: their own kind of document (Finance's: lottery results), left out of every report and of the lists
+# (they stay in the flow). A GR whose subject or portal title matches a rule's pattern is set aside, with the rule's
+# reason; build_doc_ writes them, with the rows a person adds in flow/build_doc_/conf/set_aside.txt, into its
+# output/set_aside.txt (the template's §G4a).
+set_aside:
+  rules: []
+
+# the department's own lists (glossary/, registry/, memory/ by language pair: dated versions; orgpedia/doc
+# specs/mahgrs.md §W15), relative to this file; outside git, at the dataset's flow/<code>/common/ (make pull_common,
+# make push)
+shared_lists: LFS/mahGRs/flow/mahplan/common
+
+# the outside data the flow pins: the document profile (in mahdept), the registry and the memory (shared_lists;
+# src/data/ links them). empty until the department's lists are built (the skill's step 6). A pinned version is never
+# written over; the flow moves to a new one only on purpose (mahgrs.md §W3 item 7).
+data: {profiles: "mh_gr-1", registry: "empty", memory: "empty"}

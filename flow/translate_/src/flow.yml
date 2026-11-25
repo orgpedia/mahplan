@@ -1,0 +1,41 @@
+# A Maharashtra department's GRs in English: the flow of the translate_ task (orgpedia/template.mahdept; the
+# layout: orgpedia/doc specs/docflow.md §P19). The same file in every department.
+# It works over the GovDoc files build_doc_ made, read through ../input/govdoc/ (a link each to build_doc_'s output/, made by
+# make input) and never copied: this task keeps only what its own steps make, one layer a GR (orgpedia/doc
+# specs/govdoc.md §11.5), named ../output/<name>.pdf.en.json.zst, moved to the repo's export/translate_/ by make
+# export (orgpedia/doc docflow.md §N9, §N10). Every step sees the GR's whole file, build_doc_'s and this task's joined.
+# Settings here are collection-wide: nothing is set for one document.
+#
+# The department's own values (orgpedia/doc specs/docflow.md §P4a): ../conf/values.yml is written from
+# ../../../department.yml by mahdept values (make does it before every docflow command), never by hand.
+storage: {layout: task}  # layers in ../output/, moved to the repo's export/translate_/ by make export (docflow.md §N9)
+values: ../conf/values.yml
+data: ${data}  # registry, memory: the department's lists (LFS/mahGRs/flow/<dept>/common/; src/data/ links them)
+
+exclude: {}
+
+flow:
+  - name: import
+    task: import_govdoc
+    config: {files: ../input/govdoc, layer: en}
+
+  # The shared registry's names (orgpedia/doc: specs/mahgrs.md §L3): offices, posts, departments, places, people,
+  # courts, in every block and cell, linked to their entries with their English; no model.
+  # No names inside an identifier, order number or contact (build_doc_'s values).
+  - name: glossary
+    task: glossary_tagger
+
+  # English by routes (orgpedia/doc: specs/mahgrs.md §L2, §L5): the memory's sentences, the registry's names,
+  # values by rule, the rest by Gemini 3.8 Flash with values as codes and names in a glossary. Every model call is
+  # cached, sentence by sentence, and none is made by make flow: what the cache lacks is written to
+  # .storage/defer.jsonl for a batch (make count, make batch), which asks each sentence once (../spec.md §T3, §T4).
+  - name: translate_en
+    task: translate
+    needs: [glossary]
+    applies_to: {files: pilot.txt}  # the department's pilot (src/pilot.txt), until the whole collection's cost is agreed
+    config:
+      target_lang: en
+      model: gemini-3.8-flash
+      instructions: prompts/translate_en.md
+      memory: memory
+      by_line: ["core:cc_list", "core:signature_block", "core:masthead"]

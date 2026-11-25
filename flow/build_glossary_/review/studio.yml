@@ -1,0 +1,57 @@
+# GovDoc Studio for build_glossary_'s make review (the template's decision 40): build_doc_'s GovDoc files, as this task
+# links them into input/govdoc/, read only, to see where a candidate name comes from. A fix to a GR is made in
+# build_doc_'s Studio (make review there), never here. Paths are relative to this task's folder.
+collection: mahplan
+title: Maharashtra Planning Department — Government Resolutions
+files: input/govdoc/*.govdoc.json.zst
+# the PDFs, for the page images: none here (this task does not process them); make review passes PDFS_DIR
+profiles: src/data/profiles/mh_gr-1.json  # department.yml data.profiles (make check compares them)
+goal: [fields, text]
+unit: mh_gr
+levels: [document, fields, blocks, tables, lines, words]
+text: {script: deva, digits: as_written, original_text: show}
+
+documents:
+  columns:
+    - {label: GR code, role: "gr:gr_code"}
+    - {label: Kind, role: "gr:order_kind"}
+    - {label: Number, role: "gr:order_number"}
+    - {label: Date, role: "core:issue_date"}
+    - {label: Subject, role: "gr:subject", wide: true}
+    - {label: Pages, from: pages}
+    - {label: Tables, from: tables}
+
+record:
+  mh_gr:
+    header: ["gr:order_kind", "gr:order_number", "gr:gr_code", "core:issue_date"]
+    sections:
+      - "gr:subject"
+      - "core:masthead"
+      - "gr:references"
+      - "gr:preamble"
+      - {role: "gr:decision", parts: "core:list_marker"}
+      - "core:signature_block"
+      - "core:cc_list"
+      - "core:annexure"
+
+# pages of review/ linked from the documents screen (make candidates writes the names page)
+links:
+  - {label: Candidate names, href: review/glossary/names.html}
+
+issues:
+  help: review/issues.html  # what each code means, under the issue in the selection ("What this means")
+  categories:
+    text: ["core:text_suspect", "core:text_by_ocr", "unipdf:no_converter", "unipdf:unconverted_char", "core:text_broken_reph"]
+    tables: ["core:table_total", "core:cell_spill", "core:table_column_empty", "core:scan_table_unstructured", "core:table_review"]
+    fields: ["core:role_missing", "core:role_unexpected", "core:marker_sequence", "core:value_missing", "core:date_order",
+             "core:running_header"]
+    sections: ["core:section_missing", "core:section_overlap", "core:section_inferred"]
+    blocks: ["core:block_unfinished", "core:lines_run_together"]
+  collapse: [info]
+
+fixes: []  # read only: fixes are build_doc_'s
+
+review:
+  marks: review/marks.jsonl
+  samples: review/samples/
+  sample: {size: 15, strata: [file]}

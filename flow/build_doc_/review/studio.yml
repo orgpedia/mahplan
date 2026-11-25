@@ -1,0 +1,59 @@
+# GovDoc Studio: how this task's output is reviewed (orgpedia/doc: specs/reviewer.md §R2).
+# Paths are relative to this task's folder. The config chooses and labels; it never changes how the reviewer works.
+collection: mahplan
+title: Maharashtra Planning Department — Government Resolutions
+files: output/*.govdoc.json.zst
+pdfs: input
+profiles: src/data/profiles/mh_gr-1.json  # department.yml data.profiles (make check compares them)
+goal: [fields, text]
+unit: mh_gr
+levels: [document, fields, blocks, tables, lines, words]
+text: {script: deva, digits: as_written, original_text: show}
+
+documents:
+  columns:
+    - {label: GR code, role: "gr:gr_code"}
+    - {label: Kind, role: "gr:order_kind"}
+    - {label: Number, role: "gr:order_number"}
+    - {label: Date, role: "core:issue_date"}
+    - {label: Subject, role: "gr:subject", wide: true}
+    - {label: Pages, from: pages}
+    - {label: Tables, from: tables}
+
+record:
+  mh_gr:
+    header: ["gr:order_kind", "gr:order_number", "gr:gr_code", "core:issue_date"]
+    sections:
+      - "gr:subject"
+      - "core:masthead"
+      - "gr:references"
+      - "gr:preamble"
+      - {role: "gr:decision", parts: "core:list_marker"}
+      - "core:signature_block"
+      - "core:cc_list"
+      - "core:annexure"
+
+# pages of review/ linked from the documents screen (make scorecard writes the scorecard)
+links:
+  - {label: Scorecard, href: review/setup/scorecard.html}
+
+issues:
+  help: review/issues.html  # what each code means, under the issue in the selection ("What this means")
+  categories:
+    text: ["core:text_suspect", "core:text_by_ocr", "unipdf:no_converter", "unipdf:unconverted_char", "core:text_broken_reph"]
+    tables: ["core:table_total", "core:cell_spill", "core:table_column_empty", "core:scan_table_unstructured", "core:table_review"]
+    fields: ["core:role_missing", "core:role_unexpected", "core:marker_sequence", "core:value_missing", "core:date_order",
+             "core:running_header"]
+    sections: ["core:section_missing", "core:section_overlap", "core:section_inferred"]
+    blocks: ["core:block_unfinished", "core:lines_run_together"]
+  collapse: [info]
+
+# The GRs with an order kind or number missing, one after another (orgpedia/doc specs/studio.md §R3.1; build_doc_ spec §X7):
+# click the field's words in order, Enter; x if it is not printed. Only words and fields are fixed here.
+queue: {codes: ["core:role_missing"], labels: ["gr:order_kind", "gr:order_number"], label: Missing fields}
+fixes: [words, fields]
+
+review:
+  marks: review/marks.jsonl
+  samples: review/samples/
+  sample: {size: 15, strata: [file]}

@@ -1,0 +1,52 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.ruff_cache/
+.pytest_cache/
+
+# editors and the OS
+*~
+\#*#
+.#*
+*.swp
+*.swo
+.DS_Store
+.idea/
+.vscode/
+
+# credentials and settings (env.example lists them)
+.env
+
+# The tasks keep their own files (orgpedia/doc docflow.md §N9, §N15): in git, each task's input/ links, src/, conf/,
+# output/'s links and status records (<name>.status.json), review/, README.md, its responses link; not in git, what can
+# be made again or is kept on the dataset: the free answers (cache/), the reviewer's index and passing files
+# (review/tmp/: Studio's index, the exports made for the reports), the logs, and the working store and JSON export of
+# a repo made before (.storage/, output/<name>.pdf.json)
+flow/*/.storage/
+flow/*/.cache/
+flow/*/cache/
+flow/*/review/tmp/
+flow/*/logs/
+flow/*/held.txt
+flow/*/failed.txt
+flow/*/output/*.pdf.json
+
+# the repo's edges: import/ (LFS/ made ready: the PDFs, the crawler's records, the sources, what pull_hf fetched last,
+# what was not found or repeated) and export/ (the tasks' GovDoc files and paid answers, packed into LFS/ by
+# make push_hf); LFS/mahGRs/ (the dataset's local copy, at its paths)
+import/pdfs/
+import/infos/
+import/src/
+import/sheets/
+import/scorecards/
+export/
+# the flow's outside data, written by make import from department.yml (mahdept data): the profile, links to the lists;
+# (before template 0.15, the values the flow puts in were written here; now flow/<task>/conf/values.yml, committed)
+flow/*/src/data/
+flow/*/src/values.yml
+LFS/mahGRs/
+
+# the list, written by make list_recent / list_all (a trial's is written by hand and committed)
+import/pdfs.txt

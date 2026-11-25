@@ -1,0 +1,118 @@
+# Tests for flow.yml's patterns (orgpedia/doc specs/docflow.md §P24; `make check` runs them, `docflow patterns`):
+# the lines each list of patterns must match, what it must read from them, and the lines it must not match. A
+# pattern is changed together with a line added here, taken from the GR that showed the need.
+# The same in every department: the masthead's names are given here, not taken from the department's.
+values:
+  masthead_names: '(?:वित्त\s*विभाग|सार्वजनिक\s*बांधकाम\s*विभाग)'
+  masthead_words: '(?:वित्त|सार्वजनिक)'
+
+tests:
+  # --- out of the flow: "please turn over", the press's form codes
+  - at: layout.furniture_patterns
+    match:
+      - "(कृ.मा.प.)"
+      - "कृ. मा. प."
+      - "(P.T.O.)"
+      - "एच-797 (13000+40-8-94) अ."
+      - "ROTA/H-2062 (4950+50-01-2008)-1"
+    no_match:
+      - "शासकीय मध्यवर्ती मुद्रणालय, मुंबई"          # a copy list addresses the press so too
+      - "कृपया माहिती पाठवावी."
+
+  # --- the sections' headings
+  - at: roles.rules.sections.label=gr:subject.start
+    match: ["विषय : सेवानिवृत्ती वेतन", "विषय:- अनुदान वाटप", "Subject : Pension", "Sub:- Grants"]
+    no_match: ["या विषयावर शासन निर्णय", "विषयांकित प्रकरणी"]
+
+  - at: roles.rules.sections.label=core:masthead.start
+    match:
+      - "महाराष्ट्र शासन"
+      - "महाराष्ट्र शासन वित्त विभाग"
+      - "Government of Maharashtra"
+      - "सार्वजनिक बांधकाम विभाग"
+      - "क्रमांक : संकीर्ण-२०१९/प्र.क्र.५८/सेवा-४"
+      - "Government Resolution No. PWD-2019/CR-58"
+    no_match:
+      - "महाराष्ट्र शासन पुरस्कृत योजना"              # a scheme sponsored by the Government, in a subject
+      - "महाराष्ट्र शासनाच्या वित्त विभागाने"
+
+  - at: roles.rules.sections.label=gr:references.start
+    match: ["वाचा :-", "वाचा", "पहा : १) शासन निर्णय", "पहावे :-", "संदर्भ :", "संदभव :-", "Read : 1) Government Resolution", "Ref : 1)"]
+    no_match: ["वाचावयास मिळाले", "संदर्भाधीन शासन निर्णयान्वये", "पहाता असे दिसून येते"]
+
+  - at: roles.rules.sections.label=gr:preamble.start
+    match: ["प्रस्तावना :-", "प्रस्तावना", "Preamble :"]
+    no_match: ["प्रस्तावनेत नमूद केल्याप्रमाणे"]
+
+  - at: roles.rules.sections.label=gr:decision.start
+    match:
+      - "शासन निर्णय :"
+      - "शासन निर्णय :- राज्य शासनाने असा निर्णय घेतला आहे"
+      - "शासन परिपत्रक :-"
+      - "निणणय :"                                     # the text layer's "निर्णय"
+      - "Government Resolution :"
+    no_match:
+      - "शासन निर्णय क्रमांक : संकीर्ण-२०१९/प्र.क्र.५८/सेवा-४"    # the masthead's order line
+      - "शासन निर्णय :- क्र. संकीर्ण-२०१९/प्र.क्र.५८"
+      - "शासन निर्णय - बीडीजी-२०१०/प्र.क्र.१२/इमा-२"              # its number after a dash (PWD)
+      - "शासन निर्णय, वित्त विभाग क्र. वेतन-१०९८, दि. १ जानेवारी, १९९९"   # a reference
+
+  - at: roles.rules.sections.label=core:signature_block.start
+    match:
+      - "महाराष्ट्राचे राज्यपाल यांच्या आदेशानुसार व नावाने,"
+      - "महाराष्ट्राचे राज्यपाल यांच्या आदेशानुसार व नांवाने."
+      - "By order and in the name of the Governor of Maharashtra,"
+      - "( सु. भा. बलमे )"                            # a circular signed by an office
+    no_match:
+      - "राज्यपालांनी मान्यता दिली आहे."
+
+  - at: roles.rules.sections.label=core:cc_list.start
+    match: ["प्रत :-", "प्रति,", "प्रत माहितीसाठी", "प्रतिलिपी :", "Copy to :", "Copy forwarded to", "To,",
+            "प्रत सहपत्रासह,", "प्रत गोषवा-यासह,", "प्रत."]                # PWD 20070412155458001, 20080811153039001
+    no_match: ["प्रत्येक विभागाने कार्यवाही करावी", "प्रतिनियुक्तीने नेमणूक", "प्रत सहसचिव, वित्त विभाग",
+               "प्रत सहपत्रासह पाठविण्यात यावी."]
+
+  - at: roles.rules.sections.label=core:annexure.start
+    match:
+      - "परिशिष्ट - अ"
+      - "सहपत्र"
+      - "सहपत्र - अ"
+      - "जोडपत्र-१"
+      - "प्रपत्र - ब"
+      - "Annexure - A"
+      - "प्र पत्र"                                    # spaced out by the text layer
+      - "शासन निर्णय क्र. संकीर्ण-२०१९/प्र.क्र.५८, दि. ०७/१०/२०२१ सोबतचे विवरणपत्र"
+    no_match:
+      - "सहपत्र - विवरणपत्र"                          # a signature's note of what it encloses
+      - "सहपत्र :- वेळापत्रक"
+      - "सोबत : जोडपत्र"
+
+  # --- the fields: the order's kind and number, the GR code, the date
+  - at: roles.rules.groups=gr:order_number
+    cases:
+      - text: "शासन निर्णय क्रमांक : संकीर्ण-२०१९/प्र.क्र.५८/सेवा-४"
+        groups: {kind: "शासन निर्णय", number: "संकीर्ण-२०१९/प्र.क्र.५८/सेवा-४"}
+      - text: "शासन परिपत्रक क्रमांक: वेतन-१२१९/प्र.क्र.३/सेवा-९"
+        groups: {kind: "शासन परिपत्रक", number: "वेतन-१२१९/प्र.क्र.३/सेवा-९"}
+      - text: "शासन निर्णय - बीडीजी-२०१०/प्र.क्र.१२/इमा-२"
+        groups: {kind: "शासन निर्णय", number: "बीडीजी-२०१०/प्र.क्र.१२/इमा-२"}
+      - text: "क्रमांक : संकीर्ण-२०१९/प्र.क्र.५८/सेवा-४"
+        groups: {number: "संकीर्ण-२०१९/प्र.क्र.५८/सेवा-४"}
+      - text: "Government Resolution No. PWD-2019/CR-58/Bldg-2"
+        groups: {kind: "Government Resolution", number: "PWD-2019/CR-58/Bldg-2"}
+
+  - at: roles.rules.groups=gr:gr_code
+    cases:
+      - {text: "त्याचा संकेतांक २०२००२२५१६१८४६०८०५ असा आहे.", groups: {code: "२०२००२२५१६१८४६०८०५"}}
+      - {text: "सांकेतांक क्रमांक : 202002251618460805", groups: {code: "202002251618460805"}}
+    no_match: ["संकेतांक २०२०"]
+
+  - at: roles.rules.groups=core:issue_date
+    cases:
+      - {text: "दिनांक : १८ नोव्हेंबर, २०११", groups: {date: "१८ नोव्हेंबर, २०११"}}
+      - {text: "तारीख: 18.11.2011", groups: {date: "18.11.2011"}}
+
+  # --- the checks
+  - at: role_check.rules.kind=page_numbers
+    cases:
+      - {text: "पृष्ठ ७ पैकी २", groups: {n: "२"}}

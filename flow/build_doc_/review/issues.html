@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>build_doc_ issue codes</title>
+<!-- What each issue the build_doc_ flow raises means, grouped by the step that finds it (src/flow.yml). GovDoc Studio
+     shows a code's section under the issue ("What this means": review/studio.yml, issues.help); the scorecard's
+     table of issues takes each section's first paragraph. One <section id="code"> a code: the first paragraph says
+     what it is, then why it usually happens and what to do in Studio. The same file in every department. -->
+<style>
+  :root { --text: #1e293b; --muted: #64748b; --rule: #e2e8f0; --bg: #ffffff; }
+  @media (prefers-color-scheme: dark) { :root { --text: #e2e8f0; --muted: #94a3b8; --rule: #334155; --bg: #0f172a; } }
+  body { background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, sans-serif; max-width: 760px;
+         margin: 0 auto; padding: 24px 16px; }
+  h1 { font-size: 22px; } h2 { font-size: 16px; margin-top: 28px; color: var(--muted); }
+  section { border-top: 1px solid var(--rule); padding: 10px 0; }
+  section::before { content: attr(id); display: block; font: 600 13px ui-monospace, monospace; margin-bottom: 4px; }
+  p { margin: 0 0 6px; } b { font-weight: 600; }
+</style>
+</head>
+<body>
+<h1>build_doc_ issue codes</h1>
+<p>What each issue in a department's GRs means, by the step of the flow that finds it, in the order the steps run.
+A problem found early (text read wrongly) often causes the ones after it (a field or a section not found), so look
+at the earlier steps' issues first. <b>info</b> issues are notes (nothing may be wrong); <b>warning</b>s usually
+point at something to fix.</p>
+
+<h2>text: reading the PDF's text (pdf_text)</h2>
+<section id="core:text_by_ocr">
+<p>The page, or some words on it, were read by OCR (Google Cloud Vision) instead of from the PDF's text layer.</p>
+<p>Why: the page is a scan (no text layer), its text layer is hidden under the page's image, or the text layer uses
+an old (non-Unicode) Marathi font that cannot be converted. A note, not a fault: OCR is usually good, but it can
+misread small print, stamps and tables.</p>
+<p>What to do: nothing, unless the words look wrong; then correct them at the Words level.</p>
+</section>
+<section id="unipdf:unconverted_char">
+<p>Some characters of an old (non-Unicode) Marathi font could not be converted to Unicode.</p>
+<p>Why: the font's converter has no mapping for a character (a rare conjunct, a symbol). The word around it may be
+missing a letter or show a stray character.</p>
+<p>What to do: look at the words named in the issue; correct them at the Words level if they read wrongly.</p>
+</section>
+<section id="unipdf:no_converter">
+<p>A font on the page looks like an old (non-Unicode) Marathi font, and there is no converter for it.</p>
+<p>Why: a font not seen before. Its words are read by OCR instead (see core:text_by_ocr), so the text is usually
+fine; many GRs with the same font are worth a converter.</p>
+<p>What to do: usually nothing; check a few words.</p>
+</section>
+<section id="core:text_broken_reph">
+<p>The page's text layer lost its reph (the र्‍ that sits on top of a letter, as in "कार्य"), so words come out wrong.</p>
+<p>Why: a common fault of some PDF makers. The page is read by OCR instead, so the text is usually right.</p>
+<p>What to do: check a few words with a reph; correct at the Words level if needed.</p>
+</section>
+
+<h2>text_check: checking the Marathi text (deva_check)</h2>
+<section id="core:text_suspect">
+<p>Words on the page that cannot be correct Marathi: a vowel sign at the start of a word, two vowel signs in a row,
+another script's letter (Bengali "ী" for ी), a Latin letter inside a Marathi word, an old font's mark (¨), or a
+blank or unknown character (a Symbol-font bullet shown as a box).</p>
+<p>Why: the text layer or the OCR decoded the font wrongly. The issue lists the words and the reason for each.</p>
+<p>What to do: correct the words at the Words level. Many on one page usually means the whole page was decoded
+wrongly: say so in a note rather than fixing word by word.</p>
+</section>
+
+<h2>table_check: checking the tables (pdf_tables)</h2>
+<section id="core:cell_spill">
+<p>A line of text reaches past the edges of its table cell.</p>
+<p>Why: the table's grid was found slightly wrong (a column too narrow), or the text overflows its cell in the PDF
+itself. Text may be in the wrong cell or column.</p>
+<p>What to do: look at the table; if a cell's text belongs to its neighbour, fix it at the Tables level.</p>
+</section>
+<section id="core:table_column_empty">
+<p>A column of the table is empty in every row below its header.</p>
+<p>Why: often fine (a "remarks" column left blank); sometimes a sign that the grid has an extra column line, and
+the text went into the next column.</p>
+<p>What to do: check that the other columns' text is in the right place.</p>
+</section>
+<section id="core:table_total">
+<p>A row labelled total (एकूण) is not the sum of the rows above it.</p>
+<p>Why: a number misread (OCR, a spilled cell), a row missed, or the printed total is itself wrong.</p>
+<p>What to do: compare the numbers with the PDF; correct a misread number at the Words level. A total wrong in the
+PDF itself is left as printed.</p>
+</section>
+<section id="core:scan_table_unstructured">
+<p>A scanned page has ruled lines that could not be made into one table, so its table is kept as plain text.</p>
+<p>Why: the scan's lines are broken, skewed or faint. The text is all there, but not in rows and columns.</p>
+<p>What to do: nothing for the text; the table's structure is lost on this page.</p>
+</section>
+
+<h2>role_check: checking the fields and sections (patterns)</h2>
+<section id="core:role_missing">
+<p>A field every GR should have was not found: the subject, the order kind (शासन निर्णय, परिपत्रक…), the order
+number, the issue date, the GR code, or the signature.</p>
+<p>Why: it is not printed (older GRs often have no GR code or order number), it is printed in a way the patterns do
+not know, or the text around it was read wrongly. The issue says which field.</p>
+<p>What to do: if the field is printed, select its words and give it the field (Fields level; the Missing fields
+queue takes the order kind and number one GR after another: click the words, Enter). If it is not printed, mark it
+so (x in the queue). The portal's date and GR code fill the export where none is printed.</p>
+</section>
+<section id="core:value_missing">
+<p>A field was found but its value could not be read: a date that is not a date, an order number with no number.</p>
+<p>Why: unusual writing ("दिनांक : माहे जून"), or a misread digit.</p>
+<p>What to do: check the field's words; correct a misread word, or the field's value.</p>
+</section>
+<section id="core:date_order">
+<p>The issue date is after the date in the GR code. The code carries the day the GR was put on the portal, and a
+GR is issued before it is put up, not after.</p>
+<p>Why: a misread date (a 2 read as 7), the wrong date taken as the issue date (a reference's date), or the code
+misread.</p>
+<p>What to do: check which of the two is wrong against the PDF and correct it.</p>
+</section>
+<section id="core:running_header">
+<p>A page's running header (the line at the top of later pages, with the order number) does not carry the order
+number found on the first page.</p>
+<p>Why: the order number was misread on one of them, or the wrong number was taken as the order number.</p>
+<p>What to do: compare the two with the PDF; correct the one that is wrong.</p>
+</section>
+<section id="core:marker_sequence">
+<p>Numbered paragraphs or list items skip or repeat a number (1, 2, 4… or 1, 2, 2…).</p>
+<p>Why: a paragraph's number misread or not found (it starts a line inside a block), or the GR itself numbers
+them so.</p>
+<p>What to do: look at the paragraphs around it; a paragraph run into the one before should be split (Blocks level).</p>
+</section>
+<section id="core:role_unexpected">
+<p>A field's text is not what such a field looks like (an order number with no digits).</p>
+<p>Why: the wrong words taken as the field.</p>
+<p>What to do: select the right words for the field, or remove it.</p>
+</section>
+<section id="core:section_missing">
+<p>Blocks of text that belong to no section (not the subject, references, preamble, decision, signature, copy list
+or an annexure).</p>
+<p>Why: a heading not recognised, or text between sections that the patterns do not place (a note, a stamp).</p>
+<p>What to do: give the blocks their section, if they have one.</p>
+</section>
+<section id="core:section_overlap">
+<p>Blocks given to two sections at once.</p>
+<p>Why: two headings' patterns both matched.</p>
+<p>What to do: keep the right section for them.</p>
+</section>
+<section id="core:section_inferred">
+<p>A section was found from where it sits, not from its heading (the decision with no "शासन निर्णय" heading, the
+copy list without "प्रत").</p>
+<p>Why: many GRs leave a heading out. A note: the section is usually right.</p>
+<p>What to do: check that the section starts and ends at the right blocks.</p>
+</section>
+
+<h2>block_check: blocks to look at before their text is trusted (block_check)</h2>
+<section id="core:block_unfinished">
+<p>A block of running text ends mid-sentence and the next block goes on with it: one sentence cut in two by the
+layout. Each half is translated alone, so the translation can read badly.</p>
+<p>Why: a subject printed over several lines read as separate blocks, or a sentence that runs across a page
+break or a column.</p>
+<p>What to do: join the two blocks (Blocks level) if they are one sentence; leave them if the first really ends
+there (a heading, a list's lead-in).</p>
+</section>
+<section id="core:lines_run_together">
+<p>A block of several lines, most ending in a comma, read as one paragraph: probably a list (of offices, posts,
+addresses) whose lines should each stand alone.</p>
+<p>Why: the list is outside the copy list, where lines are kept apart.</p>
+<p>What to do: split the block at each line (Blocks level), or give it the copy list section if it is one.</p>
+</section>
+<section id="core:table_review">
+<p>A table whose grid is hard to be sure of (merged cells under a header of several rows, many empty cells, a
+page read by OCR), or text that looks like a table the layout did not find (mostly numbers and percentages).</p>
+<p>Why: complex tables are the hardest part of a GR to read; the reasons are in the issue.</p>
+<p>What to do: compare the table with the PDF, cell by cell where it matters (amounts, names); fix at the Tables
+level.</p>
+</section>
+</body>
+</html>
