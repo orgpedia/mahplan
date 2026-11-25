@@ -1,0 +1,29 @@
+# Written by `mahdept values` from department.yml (make does it before every docflow command): never edit it here.
+# flow.yml puts these in for ${name} when it loads (orgpedia/doc specs/docflow.md §P4a).
+data:
+  profiles: mh_gr-1
+  registry: empty
+  memory: empty
+profiles: mh_gr-1
+masthead_names: नियोजन\s*विभाग
+masthead_words: नियोजन
+max_pages: 20
+ocr: none
+department:
+  code: mahplan
+  kind: department
+  names:
+    en: Planning Department
+  masthead:
+    names:
+    - नियोजन विभाग
+  max_pages: 20
+  cloud_vision_budget: 0.75
+  ocr: none
+  set_aside:
+    rules: []
+  shared_lists: LFS/mahGRs/flow/mahplan/common
+  data:
+    profiles: mh_gr-1
+    registry: empty
+    memory: empty

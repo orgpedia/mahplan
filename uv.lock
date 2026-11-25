@@ -837,7 +837,7 @@ wheels = [
 [[package]]
 name = "govdoc"
 version = "0.1.0"
-source = { git = "https://github.com/orgpedia/doc?subdirectory=packages%2Fgovdoc&tag=v0.7.2#224f429d7bc80f0e74366a13374b24c209477d99" }
+source = { git = "https://github.com/orgpedia/doc?subdirectory=packages%2Fgovdoc&tag=v0.7.3#638d52be15158b0eedd5d39773320d74dd2ed78b" }
 dependencies = [
     { name = "pydantic" },
     { name = "zstandard" },
@@ -846,7 +846,7 @@ dependencies = [
 [[package]]
 name = "govdoc-flow"
 version = "0.1.0"
-source = { git = "https://github.com/orgpedia/doc?subdirectory=packages%2Fdocflow&tag=v0.7.2#224f429d7bc80f0e74366a13374b24c209477d99" }
+source = { git = "https://github.com/orgpedia/doc?subdirectory=packages%2Fdocflow&tag=v0.7.3#638d52be15158b0eedd5d39773320d74dd2ed78b" }
 dependencies = [
     { name = "govdoc" },
     { name = "pydantic" },
@@ -880,7 +880,7 @@ unipdf = [
 [[package]]
 name = "govdoc-studio"
 version = "0.1.0"
-source = { git = "https://github.com/orgpedia/doc?subdirectory=packages%2Fstudio&tag=v0.7.2#224f429d7bc80f0e74366a13374b24c209477d99" }
+source = { git = "https://github.com/orgpedia/doc?subdirectory=packages%2Fstudio&tag=v0.7.3#638d52be15158b0eedd5d39773320d74dd2ed78b" }
 dependencies = [
     { name = "govdoc" },
     { name = "govdoc-flow" },
@@ -1110,7 +1110,7 @@ wheels = [
 [[package]]
 name = "mahdept"
 version = "0.1.0"
-source = { git = "https://github.com/orgpedia/template.mahdept?subdirectory=packages%2Fmahdept&tag=v0.6.5#36233cdae6ea5cb35d13bfc9026a156df4a0bc8e" }
+source = { git = "https://github.com/orgpedia/template.mahdept?subdirectory=packages%2Fmahdept&tag=v0.6.7#d8ed521f32f041a776e2630499ce12e4405bc95f" }
 dependencies = [
     { name = "govdoc" },
     { name = "govdoc-flow" },
@@ -1137,11 +1137,11 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "govdoc", git = "https://github.com/orgpedia/doc?subdirectory=packages%2Fgovdoc&tag=v0.7.2" },
-    { name = "govdoc-flow", extras = ["ocr", "unipdf", "gcv", "gemini", "scans", "indic"], git = "https://github.com/orgpedia/doc?subdirectory=packages%2Fdocflow&tag=v0.7.2" },
-    { name = "govdoc-studio", git = "https://github.com/orgpedia/doc?subdirectory=packages%2Fstudio&tag=v0.7.2" },
+    { name = "govdoc", git = "https://github.com/orgpedia/doc?subdirectory=packages%2Fgovdoc&tag=v0.7.3" },
+    { name = "govdoc-flow", extras = ["ocr", "unipdf", "gcv", "gemini", "scans", "indic"], git = "https://github.com/orgpedia/doc?subdirectory=packages%2Fdocflow&tag=v0.7.3" },
+    { name = "govdoc-studio", git = "https://github.com/orgpedia/doc?subdirectory=packages%2Fstudio&tag=v0.7.3" },
     { name = "huggingface-hub", specifier = ">=0.26" },
-    { name = "mahdept", git = "https://github.com/orgpedia/template.mahdept?subdirectory=packages%2Fmahdept&tag=v0.6.5" },
+    { name = "mahdept", git = "https://github.com/orgpedia/template.mahdept?subdirectory=packages%2Fmahdept&tag=v0.6.7" },
 ]
 
 [package.metadata.requires-dev]

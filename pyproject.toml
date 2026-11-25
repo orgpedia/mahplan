@@ -13,10 +13,10 @@ package = false
 
 [tool.uv.sources]
 # pinned by tag (the template's spec §G1a); uv.lock records the commits. make dev installs the local checkouts over them
-govdoc = { git = "https://github.com/orgpedia/doc", tag = "v0.7.2", subdirectory = "packages/govdoc" }
-govdoc-flow = { git = "https://github.com/orgpedia/doc", tag = "v0.7.2", subdirectory = "packages/docflow" }
-govdoc-studio = { git = "https://github.com/orgpedia/doc", tag = "v0.7.2", subdirectory = "packages/studio" }
-mahdept = { git = "https://github.com/orgpedia/template.mahdept", tag = "v0.6.5", subdirectory = "packages/mahdept" }
+govdoc = { git = "https://github.com/orgpedia/doc", tag = "v0.7.3", subdirectory = "packages/govdoc" }
+govdoc-flow = { git = "https://github.com/orgpedia/doc", tag = "v0.7.3", subdirectory = "packages/docflow" }
+govdoc-studio = { git = "https://github.com/orgpedia/doc", tag = "v0.7.3", subdirectory = "packages/studio" }
+mahdept = { git = "https://github.com/orgpedia/template.mahdept", tag = "v0.6.7", subdirectory = "packages/mahdept" }
 
 [tool.ruff]
 line-length = 120
